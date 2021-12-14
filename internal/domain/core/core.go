@@ -46,7 +46,7 @@ func (c *St) SendMail(pars *entities.SendReqSt) error {
 		return errs.ServiceNA
 	}
 
-	c.lg.Info("Messages have been sent successfully")
+	// c.lg.Info("Messages have been sent successfully")
 
 	return nil
 }
