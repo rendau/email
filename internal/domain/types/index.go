@@ -1,4 +1,4 @@
-package entities
+package types
 
 type SendReqSt struct {
 	Receivers []string `json:"receivers"`

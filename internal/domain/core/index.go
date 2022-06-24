@@ -1,18 +1,18 @@
 package core
 
 import (
-	"github.com/rendau/email/internal/interfaces"
+	"github.com/rendau/dop/adapters/logger"
 )
 
 type St struct {
-	lg               interfaces.Logger
+	lg               logger.Lite
 	smtpAddr         string
 	smtpAuthUser     string
 	smtpAuthPassword string
 	smtpAuthHost     string
 }
 
-func New(lg interfaces.Logger, smtpAddr string, smtpAuthUser string, smtpAuthPassword string, smtpAuthHost string) *St {
+func New(lg logger.Lite, smtpAddr string, smtpAuthUser string, smtpAuthPassword string, smtpAuthHost string) *St {
 	return &St{
 		lg:               lg,
 		smtpAddr:         smtpAddr,

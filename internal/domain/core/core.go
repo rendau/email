@@ -5,13 +5,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rendau/email/internal/domain/entities"
+	"github.com/rendau/dop/dopErrs"
+	"github.com/rendau/email/internal/domain/types"
 	"github.com/rendau/email/internal/errs"
 )
 
 var emailRegexp = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,10}$`)
 
-func (c *St) SendMail(pars *entities.SendReqSt) error {
+func (c *St) SendMail(pars *types.SendReqSt) error {
 	var err error
 
 	err = c.validateValues(pars)
@@ -43,7 +44,7 @@ func (c *St) SendMail(pars *entities.SendReqSt) error {
 	)
 	if err != nil {
 		c.lg.Errorw("fail to send mail:", err)
-		return errs.ServiceNA
+		return dopErrs.ServiceNA
 	}
 
 	// c.lg.Info("Messages have been sent successfully")
@@ -51,7 +52,7 @@ func (c *St) SendMail(pars *entities.SendReqSt) error {
 	return nil
 }
 
-func (c *St) validateValues(pars *entities.SendReqSt) error {
+func (c *St) validateValues(pars *types.SendReqSt) error {
 	for _, item := range pars.Receivers {
 		if !c.validateEmail(item) {
 			c.lg.Warnw("Bad email format", errs.BadEmailFormat)

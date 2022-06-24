@@ -1,78 +1,72 @@
 package cmd
 
 import (
-	"context"
-	"log"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/rendau/email/internal/adapters/httpapi"
-	"github.com/rendau/email/internal/adapters/logger/zap"
+	dopLoggerZap "github.com/rendau/dop/adapters/logger/zap"
+	dopServerHttps "github.com/rendau/dop/adapters/server/https"
+	"github.com/rendau/dop/dopTools"
+	"github.com/rendau/email/docs"
+	"github.com/rendau/email/internal/adapters/server/rest"
 	"github.com/rendau/email/internal/domain/core"
-	"github.com/spf13/viper"
 )
 
 func Execute() {
-	loadConf()
+	app := struct {
+		lg         *dopLoggerZap.St
+		core       *core.St
+		restApiSrv *dopServerHttps.St
+	}{}
 
-	lg, err := zap.New(viper.GetString("LOG_LEVEL"), viper.GetBool("DEBUG"), false)
-	if err != nil {
-		log.Fatal(err)
-	}
+	confLoad()
 
-	core := core.New(
-		lg,
-		viper.GetString("SMTP_ADDR"),
-		viper.GetString("SMTP_AUTH_USER"),
-		viper.GetString("SMTP_AUTH_PASSWORD"),
-		viper.GetString("SMTP_AUTH_HOST"),
+	app.lg = dopLoggerZap.New(conf.LogLevel, conf.Debug)
+
+	app.core = core.New(
+		app.lg,
+		conf.SmtpAddr,
+		conf.SmtpAuthUser,
+		conf.SmtpAuthPassword,
+		conf.SmtpAuthHost,
 	)
 
-	api := httpapi.New(lg, viper.GetString("HTTP_LISTEN"), core)
+	docs.SwaggerInfo.Host = conf.SwagHost
+	docs.SwaggerInfo.BasePath = conf.SwagBasePath
+	docs.SwaggerInfo.Schemes = []string{conf.SwagSchema}
+	docs.SwaggerInfo.Title = "Email service"
 
-	lg.Infow("Starting", "http_listen", viper.GetString("HTTP_LISTEN"))
+	// START
 
-	api.Start()
+	app.lg.Infow("Starting")
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	app.restApiSrv = dopServerHttps.Start(
+		conf.HttpListen,
+		rest.GetHandler(
+			app.lg,
+			app.core,
+			conf.HttpCors,
+		),
+		app.lg,
+	)
 
 	var exitCode int
 
 	select {
-	case <-stop:
-	case <-api.Wait():
+	case <-dopTools.StopSignal():
+	case <-app.restApiSrv.Wait():
 		exitCode = 1
 	}
 
-	lg.Infow("Shutting down...")
+	// STOP
 
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer ctxCancel()
+	app.lg.Infow("Shutting down...")
 
-	err = api.Shutdown(ctx)
-	if err != nil {
-		lg.Errorw("Fail to shutdown http-api", err)
+	if !app.restApiSrv.Shutdown(20 * time.Second) {
 		exitCode = 1
 	}
+
+	app.lg.Infow("Exit")
 
 	os.Exit(exitCode)
-}
-
-func loadConf() {
-	viper.SetDefault("DEBUG", "false")
-	viper.SetDefault("HTTP_LISTEN", ":9090")
-	viper.SetDefault("LOG_LEVEL", "info")
-
-	confFilePath := os.Getenv("CONF_PATH")
-	if confFilePath == "" {
-		confFilePath = "conf.yml"
-	}
-	viper.SetConfigFile(confFilePath)
-	_ = viper.ReadInConfig()
-
-	// env vars are in priority
-	viper.AutomaticEnv()
 }

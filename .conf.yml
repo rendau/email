@@ -1,5 +1,0 @@
-debug: false
-smtp_addr: "smtp.yandex.ru:587"
-smtp_auth_user: "qwe@mai.ru"
-smtp_auth_password: "password"
-smtp_auth_host: "smtp.yandex.ru"
