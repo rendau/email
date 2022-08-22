@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rendau/dop/dopErrs"
+	"github.com/rendau/dop/dopTools"
 	"github.com/rendau/email/internal/domain/types"
 	"github.com/rendau/email/internal/errs"
 )
@@ -55,25 +56,25 @@ func (c *St) SendMail(pars *types.SendReqSt) error {
 func (c *St) validateValues(pars *types.SendReqSt) error {
 	for _, item := range pars.Receivers {
 		if !c.validateEmail(item) {
-			c.lg.Warnw("Bad email format", errs.BadEmailFormat)
+			c.lg.Warnw("Bad email format", "error", errs.BadEmailFormat)
 			return errs.BadEmailFormat
 		}
 	}
 	if len(pars.Receivers) == 0 {
-		c.lg.Warnw("Receivers is empty", errs.ReceiversEmpty)
+		c.lg.Warnw("Receivers is empty", "error", errs.ReceiversEmpty)
 		return errs.ReceiversEmpty
 	}
 	if len(pars.Message) == 0 {
-		c.lg.Warnw("Message is empty", errs.MessageRequired)
+		c.lg.Warnw("Message is empty", "error", errs.MessageRequired)
 		return errs.MessageRequired
 	}
 	if len(pars.Subject) == 0 {
-		c.lg.Warnw("Subject is empty", errs.SubjectRequired)
+		c.lg.Warnw("Subject is empty", "error", errs.SubjectRequired)
 		return errs.SubjectRequired
 	}
 	return nil
 }
 
 func (c *St) validateEmail(v string) bool {
-	return emailRegexp.MatchString(v)
+	return dopTools.ValidateEmail(v)
 }
