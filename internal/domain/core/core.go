@@ -2,7 +2,6 @@ package core
 
 import (
 	"net/smtp"
-	"regexp"
 	"strings"
 
 	"github.com/rendau/dop/dopErrs"
@@ -10,8 +9,6 @@ import (
 	"github.com/rendau/email/internal/domain/types"
 	"github.com/rendau/email/internal/errs"
 )
-
-var emailRegexp = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,10}$`)
 
 func (c *St) SendMail(pars *types.SendReqSt) error {
 	var err error
